@@ -1,6 +1,6 @@
 # SQL Join exercise
 #
-
+USE world;
 #
 # 1: Get the cities with a name starting with ping sorted by their population with the least populated cities first
 SELECT * FROM city WHERE name LIKE 'ping%' ORDER BY population;
@@ -54,14 +54,19 @@ SELECT city.name, countrylanguage.language FROM city
     WHERE city.population BETWEEN 500 AND 600;
 #
 # 15: What names of the cities are in the same country as the city with a population of 122199 (including the that city itself)
+SELECT c1.name FROM city c1,city c2 WHERE c1.countrycode=c2.countrycode AND c2.population=122199;
+
+# My original solution, a bit too complex
 SELECT city.name FROM city 
 	JOIN country ON city.countrycode = country.code
-    WHERE country.name = ANY(
+	WHERE country.name = ANY(
 		SELECT country.name FROM country 
-        JOIN city ON city.countrycode = country.code 
-        WHERE city.population = 122199);
-#
+		JOIN city ON city.countrycode = country.code 
+		WHERE city.population = 122199);
+#  
 # 16: What names of the cities are in the same country as the city with a population of 122199 (excluding the that city itself)
+SELECT c1.name FROM city c1,city c2 WHERE c1.countrycode=c2.countrycode AND c2.population=122199 AND NOT c1.population=122199;
+# My original solution, a bit too complex
 SELECT city.name FROM city 
 	JOIN country ON city.countrycode = country.code
     WHERE country.name = ANY(
@@ -69,49 +74,56 @@ SELECT city.name FROM city
         JOIN city ON city.countrycode = country.code 
         WHERE city.population = 122199)
         AND NOT city.population = 122199;
--- SELECT * FROM city JOIN country ON city.countrycode = country.code where country.name = 'sweden';
 #
 # 17: What are the city names in the country where Luanda is capital?
+SELECT c1.name FROM city c1, city c2 WHERE c1.countrycode=c2.countrycode and c2.name = 'Luanda';
+
+# My original solution, a bit too complex
 SELECT city.name FROM city 
 	JOIN country ON city.countrycode = country.code
     WHERE country.name = ANY(
     SELECT country.name FROM country
     JOIN city ON city.id = country.capital
     WHERE city.name = 'Luanda');
-
--- SELECT city.name FROM city JOIN country ON city.countrycode = country.code WHERE country.code = 'AGO';
--- SELECT * FROM country WHERE country.code = 'AGO';
--- SELECT * FROM city WHERE city.name = 'Luanda';
 #
 # 18: What are the names of the capital cities in countries in the same region as the city named Yaren
-SELECT city.name FROM city
+# Both of these queries gives the same result.
+SELECT c1.name, cr1.capital FROM country cr1 JOIN city c1 ON c1.id = cr1.capital, 
+country cr2 JOIN city c2 ON c2.id = cr2.capital
+WHERE cr1.region = cr2.region AND c2.name = 'Yaren';
+
+# OR
+    
+SELECT city.name, country.capital FROM city
 	JOIN country ON city.id = country.capital
     WHERE country.region = ANY (
 		SELECT country.region FROM country 
 		JOIN city on city.countrycode = country.code
 		WHERE city.name = 'Yaren');
--- 'Micronesia'    
--- SELECT * FROM country; 
--- SELECT * FROM city; 
-#
 #
 # 19: What unique languages are spoken in the countries in the same region as the city named Riga
+# Both of these queries gives the same result.
+SELECT DISTINCT cl.language FROM country cr1 JOIN countrylanguage cl ON cr1.code = cl.countrycode,
+country cr2 JOIN city c ON cr2.code = c.countrycode
+WHERE cr1.region = cr2.region AND c.name = 'Riga';
+
+# OR
+
 SELECT DISTINCT countrylanguage.language FROM countrylanguage
 	JOIN country ON countrylanguage.countrycode = country.code
     WHERE country.region = ANY (
     SELECT country.region FROM country 
 		JOIN city on city.countrycode = country.code
 		WHERE city.name = 'Riga');
-        
-# SELECT DISTINCT countrylanguage.language FROM countrylanguage
-#	JOIN country ON countrylanguage.countrycode = country.code
-#    WHERE country.region = 'Baltic Countries';
-# SELECT country.region FROM country 
-#		JOIN city on city.countrycode = country.code
-#		WHERE city.name = 'Riga';
-
-# Baltic Countries
+#      
 # 20: Get the name of the most populous city
+#Three different queries that gives the same result
+SELECT name FROM city 
+ORDER BY population DESC LIMIT 1;
+# OR
+SELECT name FROM city 
+WHERE population in (SELECT MAX(population) FROM city);
+# OR 
 SELECT name FROM city
 	WHERE population = ANY (
 		SELECT MAX(population) FROM city);
